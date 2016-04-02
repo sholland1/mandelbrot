@@ -1,28 +1,37 @@
 module Lib
-    ( mandelbrotPicture
-    , ScreenSize(..)
+    ( toPicture
+    , export
+    , mandelbrot
+    , Size(..)
     ) where
 import Graphics.Gloss(Picture, bitmapOfByteString)
 import qualified Data.ByteString as BS
 import Data.Complex(Complex(..), magnitude)
 import Data.Word(Word8)
+import Codec.BMP(writeBMP, packRGBA32ToBMP24)
+import Codec.Picture(readBitmap, writeDynamicPng)
+import System.Directory(removeFile)
 
 type MyReal = Float
 type ColorPart = Word8
-data ScreenSize = ScreenSize {width :: Int, height :: Int}
+type Image = ([PixelColor], Size)
+
+data Size = Size {width :: Int, height :: Int}
 data PixelColor = PixelColor ColorPart ColorPart ColorPart ColorPart --red, green, blue, alpha
 
 toList :: PixelColor -> [ColorPart]
-toList (PixelColor r g b alpha) = [alpha, b, g, r]
+toList (PixelColor r g b alpha) = [r, g, b, alpha]
 
-mandelbrotPicture :: ScreenSize -> Picture
-mandelbrotPicture s = bitmapOfByteString (width s) (height s) (mandelbrotByteString s) True
-  where mandelbrotByteString = BS.pack . concatMap toList . mandelbrot
+toPicture :: Image -> Picture
+toPicture (pxs, s) = bitmapOfByteString (width s) (height s) (pixelsToByteString pxs) True
 
-mandelbrot :: ScreenSize -> [PixelColor]
-mandelbrot = map (getGreyPixel . iterations 255 4) . getCoordinates
+pixelsToByteString :: [PixelColor] -> BS.ByteString
+pixelsToByteString = BS.pack . concatMap (reverse . toList)
 
-getCoordinates :: ScreenSize -> [Complex MyReal]
+mandelbrot :: Size -> Image
+mandelbrot s = (map (getGreyPixel . iterations 255 4) $ getCoordinates s, s)
+
+getCoordinates :: Size -> [Complex MyReal]
 getCoordinates s = [(r/400 - 0.75) :+ i/400 | i <- range (height s), r <- range (width s)]
   where range n = let half = (fromIntegral n-1)/2 in [-half..half]
 
@@ -40,3 +49,11 @@ getBluePixel n = PixelColor n n 255 255
 
 getGradientPixel :: ColorPart -> PixelColor
 getGradientPixel n = PixelColor n 255 (255-n) 255
+
+export :: FilePath -> Image -> IO ()
+export path (pxs, s) = do
+  writeBMP path . packRGBA32ToBMP24 (width s) (height s) .
+    BS.pack . concatMap toList $ pxs
+  (Right im) <- readBitmap path
+  _ <- writeDynamicPng (path ++ ".png") im
+  removeFile path

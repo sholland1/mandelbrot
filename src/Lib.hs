@@ -24,9 +24,7 @@ toList (PixelColor r g b alpha) = [r, g, b, alpha]
 
 toPicture :: Image -> Picture
 toPicture (pxs, s) = bitmapOfByteString (width s) (height s) (pixelsToByteString pxs) True
-
-pixelsToByteString :: [PixelColor] -> BS.ByteString
-pixelsToByteString = BS.pack . concatMap (reverse . toList)
+  where pixelsToByteString = BS.pack . concatMap (reverse . toList)
 
 mandelbrot :: Size -> Image
 mandelbrot s = (map (getGreyPixel . iterations 255 4) $ getCoordinates s, s)
@@ -35,7 +33,7 @@ getCoordinates :: Size -> [Complex MyReal]
 getCoordinates s = [(r/400 - 0.75) :+ i/400 | i <- range (height s), r <- range (width s)]
   where range n = let half = (fromIntegral n-1)/2 in [-half..half]
 
-iterations :: ColorPart -> MyReal -> Complex MyReal -> ColorPart
+iterations :: (Eq a, Num a, RealFloat b) => a -> b -> Complex b -> a
 iterations iterLimit zlimit c = go c 0
   where go prev count | count == iterLimit || magnitude prev > zlimit = count
                       | otherwise = go (prev*prev + c) (count + 1)

@@ -3,7 +3,6 @@ module Lib
     , export
     , mandelbrot
     , Size(..)
-    , Position(..)
     ) where
 import Graphics.Gloss(Picture, bitmapOfByteString)
 import qualified Data.ByteString as BS
@@ -18,7 +17,6 @@ type ColorPart = Word8
 type Image = ([PixelColor], Size)
 
 data Size = Size {width :: Int, height :: Int}
-data Position = Pos MyReal MyReal
 data PixelColor = PixelColor ColorPart ColorPart ColorPart ColorPart --red, green, blue, alpha
 
 toList :: PixelColor -> [ColorPart]
@@ -28,13 +26,13 @@ toPicture :: Image -> Picture
 toPicture (pxs, s) = bitmapOfByteString (width s) (height s) (pixelsToByteString pxs) True
   where pixelsToByteString = BS.pack . concatMap (reverse . toList)
 
-mandelbrot :: Size -> Position -> MyReal -> Image
+mandelbrot :: Size -> Complex MyReal -> MyReal -> Image
 mandelbrot s p z = (map (getGreyPixel . iterations 255 2) $ getCoordinates s p z, s)
 
-getCoordinates :: Size -> Position -> MyReal -> [Complex MyReal]
-getCoordinates s (Pos x y) z = [ (r/z + x) :+ (i/z + y)
-                               | i <- range (height s)
-                               , r <- range (width s)]
+getCoordinates :: Size -> Complex MyReal -> MyReal -> [Complex MyReal]
+getCoordinates s p z = [ (r/z :+ i/z) + p
+                       | i <- range $ height s
+                       , r <- range $ width s]
   where range n = let half = (fromIntegral n-1)/2 in [-half..half]
 
 iterations :: (Eq a, Num a, RealFloat b) => a -> b -> Complex b -> a

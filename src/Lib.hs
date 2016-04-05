@@ -32,11 +32,10 @@ mandelbrot :: Size -> Position -> MyReal -> Image
 mandelbrot s p z = (map (getGreyPixel . iterations 255 2) $ getCoordinates s p z, s)
 
 getCoordinates :: Size -> Position -> MyReal -> [Complex MyReal]
-getCoordinates s (Pos x y) z = [ (r*mag + x) :+ (i*mag + y)
+getCoordinates s (Pos x y) z = [ (r/z + x) :+ (i/z + y)
                                | i <- range (height s)
                                , r <- range (width s)]
   where range n = let half = (fromIntegral n-1)/2 in [-half..half]
-        mag = recip $ z * 400
 
 iterations :: (Eq a, Num a, RealFloat b) => a -> b -> Complex b -> a
 iterations iterLimit zlimit c = go c 0

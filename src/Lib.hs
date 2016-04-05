@@ -3,6 +3,7 @@ module Lib
     , export
     , mandelbrot
     , Size(..)
+    , Position(..)
     ) where
 import Graphics.Gloss(Picture, bitmapOfByteString)
 import qualified Data.ByteString as BS
@@ -12,11 +13,12 @@ import Codec.BMP(writeBMP, packRGBA32ToBMP24)
 import Codec.Picture(readBitmap, writeDynamicPng)
 import System.Directory(removeFile)
 
-type MyReal = Float
+type MyReal = Double
 type ColorPart = Word8
 type Image = ([PixelColor], Size)
 
 data Size = Size {width :: Int, height :: Int}
+data Position = Pos MyReal MyReal
 data PixelColor = PixelColor ColorPart ColorPart ColorPart ColorPart --red, green, blue, alpha
 
 toList :: PixelColor -> [ColorPart]
@@ -26,12 +28,15 @@ toPicture :: Image -> Picture
 toPicture (pxs, s) = bitmapOfByteString (width s) (height s) (pixelsToByteString pxs) True
   where pixelsToByteString = BS.pack . concatMap (reverse . toList)
 
-mandelbrot :: Size -> Image
-mandelbrot s = (map (getGreyPixel . iterations 255 4) $ getCoordinates s, s)
+mandelbrot :: Size -> Position -> MyReal -> Image
+mandelbrot s p z = (map (getGreyPixel . iterations 255 2) $ getCoordinates s p z, s)
 
-getCoordinates :: Size -> [Complex MyReal]
-getCoordinates s = [(r/400 - 0.75) :+ i/400 | i <- range (height s), r <- range (width s)]
+getCoordinates :: Size -> Position -> MyReal -> [Complex MyReal]
+getCoordinates s (Pos x y) z = [ (r*mag + x) :+ (i*mag + y)
+                               | i <- range (height s)
+                               , r <- range (width s)]
   where range n = let half = (fromIntegral n-1)/2 in [-half..half]
+        mag = recip $ z * 400
 
 iterations :: (Eq a, Num a, RealFloat b) => a -> b -> Complex b -> a
 iterations iterLimit zlimit c = go c 0

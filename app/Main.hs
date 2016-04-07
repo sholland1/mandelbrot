@@ -9,7 +9,7 @@ import System.Exit(exitSuccess)
 
 main :: IO ()
 main = playIO
-  (InWindow "Hello World" (screenX, screenY) (0, 0))
+  (InWindow "Mandelbrot" (screenX, screenY) (0, 0))
   white
   24
   (size, (-0.75) :+ 0, 300)

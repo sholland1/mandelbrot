@@ -4,12 +4,12 @@ module Lib
     , mandelbrot
     , Size(..)
     ) where
-import Graphics.Gloss(Picture, bitmapOfByteString)
+import Codec.BMP(writeBMP, packRGBA32ToBMP24)
+import Codec.Picture(readBitmap, writeDynamicPng)
 import qualified Data.ByteString as BS
 import Data.Complex(Complex(..), magnitude)
 import Data.Word(Word8)
-import Codec.BMP(writeBMP, packRGBA32ToBMP24)
-import Codec.Picture(readBitmap, writeDynamicPng)
+import Graphics.Gloss(Picture, bitmapOfByteString)
 import System.Directory(removeFile)
 
 type MyReal = Double

@@ -9,28 +9,31 @@ import Codec.Picture(readBitmap, writeDynamicPng)
 import qualified Data.ByteString as BS
 import Data.Complex(Complex(..), magnitude)
 import Data.Word(Word8)
-import Graphics.Gloss(Picture, bitmapOfByteString)
+import qualified Graphics.Gloss as G
 import System.Directory(removeFile)
+import Control.Lens
 
-type MyReal = Double
 type ColorPart = Word8
-type Image = ([PixelColor], Size)
+type Color = (ColorPart, ColorPart, ColorPart)
+type Image = ([Color], Size)
 
 data Size = Size {width :: Int, height :: Int}
-data PixelColor = PixelColor ColorPart ColorPart ColorPart ColorPart --red, green, blue, alpha
 
-toList :: PixelColor -> [ColorPart]
-toList (PixelColor r g b alpha) = [r, g, b, alpha]
+toList :: Color -> [ColorPart]
+toList (r, g, b) = [r, g, b, 255]
 
-toPicture :: Image -> Picture
-toPicture (pxs, s) = bitmapOfByteString (width s) (height s) (pixelsToByteString pxs) True
+toPicture :: Image -> G.Picture
+toPicture (pxs, s) = G.bitmapOfByteString (width s) (height s) (pixelsToByteString pxs) True
   where pixelsToByteString = BS.pack . concatMap (reverse . toList)
 
-mandelbrot :: Size -> Complex MyReal -> MyReal -> Image
+{-# SPECIALIZE mandelbrot :: Size -> Complex Float -> Float -> Image #-}
+{-# SPECIALIZE mandelbrot :: Size -> Complex Double -> Double -> Image #-}
+mandelbrot :: (Enum a, RealFloat a) => Size -> Complex a -> a -> Image
 mandelbrot s p z = (map (getPixel' . iterations (255::Int) 4) $ getCoordinates s p z, s)
-  where getPixel' = getPixel (PixelColor 0 255 255 255) (PixelColor 255 0 255 255)
+  where getPixel' = getPixel (toInts G.white) (toInts G.black)
+        toInts = (each %~ truncate . (* 255)) . G.rgbaOfColor
 
-getCoordinates :: Size -> Complex MyReal -> MyReal -> [Complex MyReal]
+getCoordinates :: (Enum a, RealFloat a) => Size -> Complex a -> a -> [Complex a]
 getCoordinates s p z = [ (r/z :+ i/z) + p
                        | i <- range $ height s
                        , r <- range $ width s]
@@ -41,10 +44,9 @@ iterations iterLimit zlimit c = go c 0
   where go prev count | count == iterLimit || magnitude prev > zlimit = count
                       | otherwise = go (prev*prev + c) (count + 1)
 
-getPixel :: Real a => PixelColor -> PixelColor -> a -> PixelColor
-getPixel (PixelColor r1 g1 b1 _) (PixelColor r2 g2 b2 _) n =
-  PixelColor (avg r1 r2) (avg g1 g2) (avg b1 b2) 255
-  where avg s e = s - (c * (s - e))
+getPixel :: (Integral a, Real b) => (a,a,a,x) -> (a,a,a,y) -> b -> (a,a,a)
+getPixel (r1, g1, b1, _) (r2, g2, b2, _) n = (avg r1 r2, avg g1 g2, avg b1 b2)
+  where avg start end = start - (c * (start - end))
         c = 10 * truncate (logBase 1.25 (realToFrac n::Float))
 
 export :: FilePath -> Image -> IO ()

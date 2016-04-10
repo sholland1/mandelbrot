@@ -1,23 +1,41 @@
+{-# LANGUAGE TemplateHaskell #-}
 module Lib
-    ( toPicture
-    , export
-    , mandelbrot
-    , Size(..)
+    ( toPicture, export, mandelbrot
+    , MandelbrotParams(..), Size(..), Position(..), Zoom, Image
+    , size, position, zoom, innerColor, outerColor
+    , updatePos
     ) where
 import Codec.BMP(writeBMP, packRGBA32ToBMP24)
 import Codec.Picture(readBitmap, writeDynamicPng)
+import Control.Lens(makeLenses, each, (^.), (%~), (+~))
 import qualified Data.ByteString as BS
 import Data.Complex(Complex(..), magnitude)
 import Data.Word(Word8)
 import qualified Graphics.Gloss as G
 import System.Directory(removeFile)
-import Control.Lens
 
 type ColorPart = Word8
 type Color = (ColorPart, ColorPart, ColorPart)
 type Image = ([Color], Size)
+type Zoom a = a
 
 data Size = Size {width :: Int, height :: Int}
+
+data Position a = Pos {_x :: a, _y :: a}
+makeLenses ''Position
+
+data MandelbrotParams a =
+  M { _size :: Size
+    , _position :: Position a
+    , _zoom :: Zoom a
+    , _innerColor :: G.Color
+    , _outerColor :: G.Color
+    }
+makeLenses ''MandelbrotParams
+
+updatePos :: (Real a, Fractional (Zoom b)) => a -> a -> MandelbrotParams b -> MandelbrotParams b
+updatePos x' y' mp = newCoord x x' . newCoord y y' $ mp
+  where newCoord c c' = position.c +~ realToFrac c'/_zoom mp
 
 toList :: Color -> [ColorPart]
 toList (r, g, b) = [r, g, b, 255]
@@ -26,12 +44,14 @@ toPicture :: Image -> G.Picture
 toPicture (pxs, s) = G.bitmapOfByteString (width s) (height s) (pixelsToByteString pxs) True
   where pixelsToByteString = BS.pack . concatMap (reverse . toList)
 
-{-# SPECIALIZE mandelbrot :: Size -> Complex Float -> Float -> Image #-}
-{-# SPECIALIZE mandelbrot :: Size -> Complex Double -> Double -> Image #-}
-mandelbrot :: (Enum a, RealFloat a) => Size -> Complex a -> a -> Image
-mandelbrot s p z = (map (getPixel' . iterations (255::Int) 4) $ getCoordinates s p z, s)
-  where getPixel' = getPixel (toInts G.white) (toInts G.black)
-        toInts = (each %~ truncate . (* 255)) . G.rgbaOfColor
+{-# SPECIALIZE mandelbrot :: MandelbrotParams Float -> Image #-}
+{-# SPECIALIZE mandelbrot :: MandelbrotParams Double -> Image #-}
+mandelbrot :: (Enum (Zoom a), RealFloat (Zoom a)) => MandelbrotParams a -> Image
+mandelbrot mp = (map (getPixel' . iterations (255::Int) 4) coords, _size mp)
+  where getPixel' = getPixel (toInts innerColor) (toInts outerColor)
+        toInts = (each %~ truncate . (* 255)) . G.rgbaOfColor . (mp ^.)
+        coords = getCoordinates (_size mp) (toComplex $ _position mp) (_zoom mp)
+        toComplex p = _x p :+ _y p
 
 getCoordinates :: (Enum a, RealFloat a) => Size -> Complex a -> a -> [Complex a]
 getCoordinates s p z = [ (r/z :+ i/z) + p

@@ -31,6 +31,7 @@ executable mandelbrot-exe
   build-depends:       base
                      , mandelbrot
                      , gloss
+                     , lens
   default-language:    Haskell2010
 
 source-repository head

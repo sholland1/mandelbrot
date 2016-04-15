@@ -1,4 +1,5 @@
 #+TITLE: Mandelbrot
+[[file:640x360.png][Sample image of Mandelbrot set]]
 ** Overview
 This is a simple program for viewing and exporting images of the Mandelbrot set.
 ** Build

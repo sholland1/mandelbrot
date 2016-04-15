@@ -1,6 +1,6 @@
 name:                mandelbrot
-version:             0.1.0.0
-synopsis:            A program for generating images of the mandelbrot set
+version:             1.0.0.0
+synopsis:            A program for viewing and generating images of the Mandelbrot set.
 homepage:            http://github.com/sholland1/mandelbrot
 license:             BSD3
 license-file:        LICENSE
@@ -9,7 +9,6 @@ maintainer:          holland_s91@yahoo.com
 copyright:           2016 Seth Holland
 category:            Graphics
 build-type:          Simple
--- extra-source-files:
 cabal-version:       >=1.10
 
 library

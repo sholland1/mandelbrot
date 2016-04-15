@@ -8,7 +8,7 @@ To build the program, execute the following in a terminal:
 stack build
 #+END_SRC
 ** Run
-Likewise, to run the program, execute the follwing:
+Likewise, to run the program, execute the following:
 #+BEGIN_SRC sh
 stack exec mandelbrot-exe
 #+END_SRC

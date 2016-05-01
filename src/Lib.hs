@@ -34,7 +34,7 @@ data FractalParams a =
 makeLenses ''FractalParams
 
 updatePos :: (Real a, Fractional (Zoom b)) => a -> a -> FractalParams b -> FractalParams b
-updatePos x' y' mp = newCoord x x' . newCoord y y' $ mp
+updatePos x' y' mp = newCoord x x' . newCoord y (-y') $ mp
   where newCoord c c' = position.c +~ realToFrac c'/_zoom mp
 
 toList :: Color -> [ColorPart]
@@ -55,7 +55,7 @@ mandelbrot mp = (map (getPixel' . iterations (255::Int) 3) coords, _size mp)
 
 getCoordinates :: (Enum a, RealFloat a) => Size -> Complex a -> a -> [Complex a]
 getCoordinates s p z = [ (r/z :+ i/z) + p
-                       | i <- range $ height s
+                       | i <- reverse . range $ height s
                        , r <- range $ width s]
   where range n = let half = (fromIntegral n-1)/2 in [-half..half]
 

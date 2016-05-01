@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Lib
     ( toPicture, export, mandelbrot
-    , MandelbrotParams(..), Size(..), Position(..), Zoom, Image
+    , FractalParams(..), Size(..), Position(..), Zoom, Image
     , size, position, zoom, innerColor, outerColor
     , updatePos
     ) where
@@ -24,16 +24,16 @@ data Size = Size {width :: Int, height :: Int}
 data Position a = Pos {_x :: a, _y :: a}
 makeLenses ''Position
 
-data MandelbrotParams a =
-  M { _size :: Size
+data FractalParams a =
+  F { _size :: Size
     , _position :: Position a
     , _zoom :: Zoom a
     , _innerColor :: G.Color
     , _outerColor :: G.Color
     }
-makeLenses ''MandelbrotParams
+makeLenses ''FractalParams
 
-updatePos :: (Real a, Fractional (Zoom b)) => a -> a -> MandelbrotParams b -> MandelbrotParams b
+updatePos :: (Real a, Fractional (Zoom b)) => a -> a -> FractalParams b -> FractalParams b
 updatePos x' y' mp = newCoord x x' . newCoord y y' $ mp
   where newCoord c c' = position.c +~ realToFrac c'/_zoom mp
 
@@ -44,9 +44,9 @@ toPicture :: Image -> G.Picture
 toPicture (pxs, s) = G.bitmapOfByteString (width s) (height s) (pixelsToByteString pxs) True
   where pixelsToByteString = BS.pack . concatMap (reverse . toList)
 
-{-# SPECIALIZE mandelbrot :: MandelbrotParams Float -> Image #-}
-{-# SPECIALIZE mandelbrot :: MandelbrotParams Double -> Image #-}
-mandelbrot :: (Enum (Zoom a), RealFloat (Zoom a)) => MandelbrotParams a -> Image
+{-# SPECIALIZE mandelbrot :: FractalParams Float -> Image #-}
+{-# SPECIALIZE mandelbrot :: FractalParams Double -> Image #-}
+mandelbrot :: (Enum (Zoom a), RealFloat (Zoom a)) => FractalParams a -> Image
 mandelbrot mp = (map (getPixel' . iterations (255::Int) 3) coords, _size mp)
   where getPixel' = getPixel (toFloats innerColor) (toFloats outerColor)
         toFloats = G.rgbaOfColor . (mp ^.)

@@ -19,16 +19,22 @@ main = playIO
 -- main = display
 --   (InWindow "Mandelbrot" (screenX, screenY) (0, 0))
 --   white $ toPicture $ mandelbrot params
+
 -- main = export "myBrot" $ mandelbrot params
 
-params :: MandelbrotParams Float
-params = M (Size screenX screenY) (Pos (-0.75) 0) 300 white black
+-- main = do
+--   foo <- return $! toPicture $ mandelbrot params
+--   print foo
+--   print "done."
 
-screenX = 200
-screenY = 160
+params :: FractalParams Double
+params = F (Size screenX screenY) (Pos (-0.75) 0) 300 white black
+
+screenX = 1920
+screenY = 1080
 
 eventHandler :: (Enum (Zoom a), RealFloat (Zoom a)) =>
-                Event -> MandelbrotParams a -> IO (MandelbrotParams a)
+                Event -> FractalParams a -> IO (FractalParams a)
 eventHandler (EventKey (SpecialKey KeyEsc) Down _ _) = return exitSuccess
 eventHandler (EventKey (MouseButton LeftButton) Up _ (clickX, clickY)) =
   return . updatePos clickX clickY

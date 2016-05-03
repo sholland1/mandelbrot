@@ -67,8 +67,8 @@ iterations iterLimit zlimit c = go c 0
 
 getPixel :: (Integral a, Real b) => (Float,Float,Float,x) -> (Float,Float,Float,y) -> b -> (a,a,a)
 getPixel (r1, g1, b1, _) (r2, g2, b2, _) n = (avg r1 r2, avg g1 g2, avg b1 b2)
-  where avg start end = truncate $ end + (frac * (start - end))
-        frac = 9 * logBase 1.25 (1+realToFrac n::Float)
+  where avg start end = truncate $ 255 * (end + frac * (start - end))
+        frac = logBase 1.25 (1+realToFrac n::Float)/25
 
 export :: FilePath -> Image -> IO ()
 export path (pxs, s) = do

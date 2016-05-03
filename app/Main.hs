@@ -8,28 +8,33 @@ import System.Exit(exitSuccess)
 
 main :: IO ()
 main = playIO
-  (InWindow "Mandelbrot" (screenX, screenY) (0, 0))
+  (InWindow windowTitle (screenX, screenY) (0, 0))
   white
   24
   params
-  (return . toPicture . mandelbrot)
+  (return . toPicture . fractal)
   eventHandler
   (const return)
 
 -- main = display
---   (InWindow "Mandelbrot" (screenX, screenY) (0, 0))
---   white $ toPicture $ mandelbrot params
+--   (InWindow windowTitle (screenX, screenY) (0, 0))
+--   white $ toPicture $ fractal params
 
--- main = export "myBrot" $ mandelbrot params
+-- main = export imageName $ fractal params
 
 -- main = do
---   foo <- return $! toPicture $ mandelbrot params
+--   foo <- return $! toPicture $ fractal params
 --   print foo
 --   print "done."
+
+fractal :: (Enum (Zoom a), RealFloat (Zoom a)) => FractalParams a -> Image
+fractal = mandelbrot
 
 params :: FractalParams Double
 params = F (Size screenX screenY) (Pos (-0.75) 0) 300 white black
 
+windowTitle = "Mandelbrot"
+imageName = "myBrot"
 screenX = 1920
 screenY = 1080
 
@@ -40,5 +45,5 @@ eventHandler (EventKey (MouseButton LeftButton) Up _ (clickX, clickY)) =
   return . updatePos clickX clickY
 eventHandler (EventKey (Char 'i') Down _ _) = return . (zoom *~ 1.1)
 eventHandler (EventKey (Char 'o') Down _ _) = return . (zoom *~ 0.9)
-eventHandler (EventKey (Char 'x') Down _ _) = \mp -> export "myBrot" (mandelbrot mp) >> return mp
+eventHandler (EventKey (Char 'x') Down _ _) = \fp -> export imageName (fractal fp) >> return fp
 eventHandler _ = return
